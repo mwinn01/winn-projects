@@ -1,0 +1,78 @@
+#define stepPin 3
+#define dirPin 7
+#define button1 13
+
+const int stepsPerRevolution = 3200; //sixteenth stepping
+const int stepDelay = 1000; //delay in microseconds between motor on and off
+const int moveDelay = 200;  //delay in milliseconds between position changes
+const int slopError = 15; //direction change addition for gear slop
+bool dirflag = true; //false for forward, true for backward
+
+
+int stepError = 0; //Difference between current position and new position
+int stepCurrent = 0; //Current position in degrees
+int stepNew = 0; //New position in degrees
+int positionArray[5] = {300, 75, 225, 150, 0};
+int positionArray2[5] = {50, 0, 100, 0, 50};
+
+void setup() {
+    // put your setup code here, to run once:
+    pinMode(stepPin, OUTPUT);
+    pinMode(dirPin, OUTPUT);
+    pinMode(button1, INPUT_PULLUP);
+
+}
+
+
+void loop() {
+    // put your main code here, to run repeatedly:
+
+    if (digitalRead(button1) == LOW) {    //if button pressed
+        delay(20);                                                    //wait
+        if (digitalRead(button1) == LOW) {   //is button still pressed?
+
+
+            for (int i = 0; i < 5; i++) {
+
+                stepNew = positionArray[i];
+                stepError = stepNew - stepCurrent;
+
+                if (stepError > 0) { //Open flaps
+
+                    digitalWrite(dirPin, HIGH);
+
+                    if (dirflag) {
+                        stepError += slopError; //add 10 steps to account for slop
+                    }
+                    dirflag = false;
+                }
+                if (stepError < 0) { //Close flaps
+
+                    digitalWrite(dirPin, LOW);
+                    stepError = (stepError * (-1)); //make stepError positive for the loop
+
+                    if (!dirflag) {
+                        stepError += slopError;
+                    }
+                    dirflag = true;
+                }
+
+                for (int j = 0; j < stepError; j++) {
+                    digitalWrite(stepPin, HIGH);
+                    delayMicroseconds(stepDelay);
+                    digitalWrite(stepPin, LOW);
+                    delayMicroseconds(stepDelay);
+                }
+
+
+
+                stepCurrent = stepNew;
+                stepError = 0;
+                delay(moveDelay);
+            }
+
+
+        }
+    }
+
+}
